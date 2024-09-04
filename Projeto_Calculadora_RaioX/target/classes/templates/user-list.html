@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sakai - Admin Panel</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    </style>
+</head>
+<body>
+<div class="" th:replace="Navbar/navbar :: navbar">
+    <h1>CalcRaioX</h1>
+</div>
+<div class="container mt-4">
+    <div class="header">
+        <h1>Lista de Usuários</h1>
+    </div>
+    <div class="results-table">
+        <h2 class="text-center mt-5"></h2>
+        <h2 class="text-center mt-5"></h2>
+        <div class="filter-container form-group row">
+            <label for="filter-name" class="col-sm-2 col-form-label">Filtrar por Username:</label>
+            <div class="col-sm-3 filter-name">
+                <input type="text" id="filter-name" class="form-control" placeholder="Digite o Username">
+            </div>
+            <label for="filter-role" class="col-sm-2 col-form-label filtro-role">Filtrar por Role:</label>
+            <div class="col-sm-3 filter-role">
+                <input type="text" id="filter-role" class="form-control" placeholder="Digite a Role">
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th class="col-2">Ações</th>
+            </tr>
+            </thead>
+            <tbody id="users-tbody">
+            <tr th:each="user : ${users}">
+                <td th:text="${user.id}"></td>
+                <td th:text="${user.username}"></td>
+                <td th:text="${user.roles}"></td>
+                <td>
+                    <div th:if="${user.username != username}">
+                        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+                                th:if="${user.roles.toString() == 'PENDING' or user.roles.toString() == 'USER' or user.roles.toString() == 'ADMIN'}"
+                                th:data-target="'#modalEditar' + ${user.id}">
+                            Edit Details
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                                th:if="${user.roles.toString() != 'MASTER'}"
+                                th:data-target="'#modalDeletar' + ${user.id}">
+                            Delete
+                        </button>
+                    </div>
+                    <div th:if="${user.username == username}">
+                        -
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div th:each="user : ${users}" th:id="'modalEditar' + ${user.id}" class="modal fade p-4 py-md-5 mt-5"
+         tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header p-5 pb-4 border-bottom-0">
+                    <h1 class="fw-bold mb-0 fs-2">Edit User Details</h1>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body p-5 pt-0">
+                    <form th:action="@{/editar/{id}(id=${user.id})}" method="post">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control rounded-3" id="username" name="username" placeholder="New Username" th:value="${user.username}" required>
+                            <label for="username">New Username</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-control rounded-3" id="role" name="role" placeholder="New Role" required>
+                                <option th:each="role : ${roles}" th:value="${role}" th:text="${role.toString()}" th:selected="${role == user.roles}"></option>
+                            </select>
+                            <label for="role">New Role</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control rounded-3" id="novaSenha" name="novaSenha" placeholder="New Password">
+                            <label for="novaSenha">New Password</label>
+                        </div>
+                        <button type="submit" class="w-100 mb-2 btn btn-lg rounded-3 btn-primary">Edit</button>
+                        <button type="button" class="w-100 mb-2 btn btn-lg rounded-3 btn-secondary" data-dismiss="modal">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Deletar -->
+    <div th:each="user : ${users}" th:id="'modalDeletar' + ${user.id}" class="modal fade p-4 py-md-5 mt-5" tabindex="-1"
+         role="dialog" aria-labelledby="modalDeletarLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-body p-4 text-center">
+                    <h5 class="mb-0">Are you sure?</h5>
+                    <p class="mb-0">You want to delete <strong th:text="${user.username}"></strong>?</p>
+                </div>
+                <form th:action="@{/deletar/{id}(id=${user.id})}" method="post" class="modal-footer flex-nowrap p-0">
+                    <button type="submit" class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end"><strong>Submit</strong></button>
+                    <button data-dismiss="modal" type="button" class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0" data-bs-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    document.getElementById('filter-name').addEventListener('input', function() {
+        filterTable();
+    });
+
+    document.getElementById('filter-role').addEventListener('input', function() {
+        filterTable();
+    });
+
+    function filterTable() {
+        var filterName = document.getElementById('filter-name').value.toLowerCase();
+        var filterRole = document.getElementById('filter-role').value.toLowerCase();
+        var rows = document.querySelectorAll('#users-tbody tr');
+        rows.forEach(function(row) {
+            var name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            var role = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            if (name.includes(filterName) && role.includes(filterRole)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
